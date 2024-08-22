@@ -1,4 +1,4 @@
-import { Tail, Head } from "./modules/SnakeBody.js";
+import { Head } from "./modules/SnakeBody.js";
 
 // Funciones (requiere simplificación)
 function testing(location, block){
@@ -11,7 +11,7 @@ function testing(location, block){
 function setting(location, block){ 
    if(block == "void"){
       ctx.clearRect(location.x * 10, location.y * 10, 10, 10);
-      console.log(`cola se ha movido hacia ${location.x}`)
+      console.log(`cola se ha movido hacia ${location.x + 1}`)
    }
    else{
       ctx.fillRect(location.x * 10, location.y * 10, 10, 10);
@@ -32,9 +32,15 @@ ctx.fillRect(10, 10, 10, 10);
 ctx.strokeRect(0, 0, 300, 150);
 
 
-for(let i = 0; i < 10; i++){
-   head.forward();
-}
+// Main
+(function main(time){
+   window.requestAnimationFrame(main);
+   
+   if(head.location.x < 20) {
+      head.forward();
+      
+   } else return;
+})();
 
 /*
 puedes imaginar que se siente estar sólo? o cómo es amar. 
