@@ -20,7 +20,7 @@ Para la lista principal por el momento tenemos las siguientes herramientas:
 
 
 ## Medidas de progreso
-* [ ] Documentos base.
+* [x] Documentos base.
 * [ ] Mecánicas base.
 * [ ] Actualizador, renderizador, detector de colisiones y lector de sprites.
 * [ ] Características adicionales.
