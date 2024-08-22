@@ -3,7 +3,7 @@ Game multiplataform Snake Dungeon Procedular with Powers.
 
 > **Rama principal para fundar la estructura inicial.**
 
-Una manera para ejecutar el juego es acceder a la web del juego o ejecutar por medio de la ejecución de un servidor local.
+Una manera para ejecutar el juego es acceder a la [web del juego][game] o ejecutar por medio de la ejecución de un servidor local.
 
 ## Herramientas
 Para la lista principal por el momento tenemos las siguientes herramientas:
@@ -24,3 +24,5 @@ Para la lista principal por el momento tenemos las siguientes herramientas:
 * [ ] Mecánicas base.
 * [ ] Actualizador, renderizador, detector de colisiones y lector de sprites.
 * [ ] Características adicionales.
+
+[game]: https://akzule.github.io/PowerSnake/
