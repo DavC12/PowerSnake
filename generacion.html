@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mamada de juego</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #2c3e50;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      const config = {
+        type: Phaser.AUTO,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        backgroundColor: "#34495e",
+        scene: {
+          preload: preload,
+          create: create,
+          update: update,
+        },
+        physics: {
+          default: "arcade",
+          arcade: {
+            debug: false,
+          },
+        },
+        audio: {
+          disableWebAudio: true,
+        },
+        canvasStyle: "willReadFrequently: true",
+      };
+
+      let game;
+      let snake, food, cursors;
+      let gridSize = 20;
+      let snakeSpeed = 200;
+      let lastMoveTime = 0;
+      let direction = "right";
+      let score = 0;
+      let scoreText, levelText;
+      let level = 1;
+      let dungeon;
+      let gameActive = false;
+
+      function preload() {
+        //sin esta mrd no carga jaja
+      }
+
+      function create() {
+        this.input.keyboard.on("keydown", handleKeyDown, this);
+
+        snake = this.add.group();
+        for (let i = 0; i < 3; i++) {
+          const segment = this.add.rectangle(
+            100 + i * gridSize,
+            100,
+            gridSize - 2,
+            gridSize - 2,
+            0x00ff00
+          );
+          segment.setOrigin(0);
+          snake.add(segment);
+        }
+
+        food = this.add.rectangle(0, 0, gridSize - 2, gridSize - 2, 0xff0000);
+        food.setOrigin(0);
+
+        scoreText = this.add.text(16, 16, "Puntuación: 0", {
+          fontSize: "18px",
+          fill: "#fff",
+        });
+        levelText = this.add.text(16, 40, "Nivel: 1", {
+          fontSize: "18px",
+          fill: "#fff",
+        });
+
+        dungeon = this.add.group();
+        generateDungeon.call(this);
+        placeFood();
+
+        gameActive = true;
+
+        this.cameras.main.startFollow(snake.getFirst(true), true, 0.05, 0.05);
+        this.cameras.main.setBounds(0, 0, config.width * 2, config.height * 2);
+      }
+
+      function update(time) {
+        if (gameActive && time > lastMoveTime + snakeSpeed) {
+          lastMoveTime = time;
+          moveSnake.call(this);
+        }
+      }
+
+      function handleKeyDown(event) {
+        if (!gameActive) return;
+
+        switch (event.keyCode) {
+          case Phaser.Input.Keyboard.KeyCodes.LEFT:
+            if (direction !== "right") direction = "left";
+            break;
+          case Phaser.Input.Keyboard.KeyCodes.RIGHT:
+            if (direction !== "left") direction = "right";
+            break;
+          case Phaser.Input.Keyboard.KeyCodes.UP:
+            if (direction !== "down") direction = "up";
+            break;
+          case Phaser.Input.Keyboard.KeyCodes.DOWN:
+            if (direction !== "up") direction = "down";
+            break;
+        }
+      }
+
+      function moveSnake() {
+        let x = snake.getFirst(true).x;
+        let y = snake.getFirst(true).y;
+
+        switch (direction) {
+          case "left":
+            x -= gridSize;
+            break;
+          case "right":
+            x += gridSize;
+            break;
+          case "up":
+            y -= gridSize;
+            break;
+          case "down":
+            y += gridSize;
+            break;
+        }
+
+        if (x < 0 || x >= config.width || y < 0 || y >= config.height) {
+          expandMap.call(this, x, y);
+        }
+
+        if (
+          dungeon.getChildren().some((wall) => wall.x === x && wall.y === y)
+        ) {
+          gameOver.call(this);
+          return;
+        }
+
+        if (
+          snake
+            .getChildren()
+            .some((segment) => segment.x === x && segment.y === y)
+        ) {
+          gameOver.call(this);
+          return;
+        }
+
+        const newHead = this.add.rectangle(
+          x,
+          y,
+          gridSize - 2,
+          gridSize - 2,
+          0x00ff00
+        );
+        newHead.setOrigin(0);
+        snake.addAt(newHead, 0);
+
+        if (x === food.x && y === food.y) {
+          eatFood.call(this);
+        } else {
+          snake.removeLast(true);
+        }
+      }
+
+      function generateDungeon() {
+        dungeon.clear(true, true);
+        const wallCount = Math.floor(
+          (config.width / gridSize) * (config.height / gridSize) * 0.1
+        );
+        for (let i = 0; i < wallCount; i++) {
+          let wall;
+          do {
+            wall = {
+              x: Phaser.Math.Between(0, config.width / gridSize - 1) * gridSize,
+              y:
+                Phaser.Math.Between(0, config.height / gridSize - 1) * gridSize,
+            };
+          } while (isPositionOccupied(wall));
+          const wallSprite = this.add.rectangle(
+            wall.x,
+            wall.y,
+            gridSize,
+            gridSize,
+            0x7f8c8d
+          );
+          wallSprite.setOrigin(0);
+          dungeon.add(wallSprite);
+        }
+      }
+
+      function isPositionOccupied(position) {
+        return (
+          dungeon
+            .getChildren()
+            .some((wall) => wall.x === position.x && wall.y === position.y) ||
+          snake
+            .getChildren()
+            .some(
+              (segment) => segment.x === position.x && segment.y === position.y
+            )
+        );
+      }
+
+      function placeFood() {
+        let newFoodPosition;
+        do {
+          newFoodPosition = {
+            x: Phaser.Math.Between(0, config.width / gridSize - 1) * gridSize,
+            y: Phaser.Math.Between(0, config.height / gridSize - 1) * gridSize,
+          };
+        } while (isPositionOccupied(newFoodPosition));
+        food.setPosition(newFoodPosition.x, newFoodPosition.y);
+      }
+
+      function eatFood() {
+        score += 10;
+        scoreText.setText("Puntuación: " + score);
+        if (score % 50 === 0) {
+          levelUp.call(this);
+        }
+        placeFood();
+      }
+
+      function levelUp() {
+        level++;
+        levelText.setText("Nivel: " + level);
+        generateDungeon.call(this);
+        snakeSpeed = Math.max(50, snakeSpeed - 10);
+      }
+
+      function gameOver() {
+        gameActive = false;
+        this.time.delayedCall(
+          1000,
+          () => {
+            this.scene.restart();
+            score = 0;
+            level = 1;
+            direction = "right";
+            snakeSpeed = 200;
+            gameActive = true;
+          },
+          [],
+          this
+        ); // Asegúrate de pasar 'this' como el contexto
+      }
+
+      function expandMap(x, y) {
+        if (x < 0) {
+          config.width += gridSize;
+        } else if (x >= config.width) {
+          config.width += gridSize;
+        } else if (y < 0) {
+          config.height += gridSize;
+        } else if (y >= config.height) {
+          config.height += gridSize;
+        }
+        generateDungeon.call(this);
+      }
+
+      window.onload = () => {
+        game = new Phaser.Game(config);
+      };
+    </script>
+  </body>
+</html>
